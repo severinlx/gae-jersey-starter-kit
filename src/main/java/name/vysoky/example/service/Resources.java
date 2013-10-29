@@ -8,7 +8,6 @@ import name.vysoky.example.domain.Resource;
 import org.apache.commons.io.IOUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -25,7 +24,7 @@ public class Resources {
     private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
     @Context
-    EntityManagerFactory entityManagerFactory;
+    EntityManager entityManager;
 
     @Context
     UriInfo uriInfo;
@@ -40,13 +39,8 @@ public class Resources {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<Resource> list() {
-        EntityManager em = entityManagerFactory.createEntityManager();
-        try {
-            Query query = em.createQuery("select r from Resource r");
-            return query.getResultList();
-        } finally {
-            em.close();
-        }
+        Query query = entityManager.createQuery("SELECT r FROM Resource AS r");
+        return query.getResultList();
     }
 
     @GET
@@ -84,7 +78,6 @@ public class Resources {
 
     protected void write(Resource resource, InputStream inputStream) throws IOException {
         logger.log(Level.INFO, "Writing resource: " + resource);
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
         FileWriteChannel writeChannel = null;
         try {
             // Get a file service

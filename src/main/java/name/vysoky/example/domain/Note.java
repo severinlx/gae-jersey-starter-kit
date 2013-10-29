@@ -12,7 +12,7 @@ import java.util.Date;
  * @author Jiri Vysoky
  */
 @Entity
-public class Greeting implements Serializable {
+public class Note implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

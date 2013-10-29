@@ -2,7 +2,7 @@ package name.vysoky.example.context;
 
 import com.sun.jersey.spi.inject.SingletonTypeInjectableProvider;
 
-import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityManager;
 import javax.persistence.Persistence;
 import javax.ws.rs.core.Context;
 
@@ -11,14 +11,14 @@ import javax.ws.rs.core.Context;
  *
  * @author Jiri Vysoky
  */
-public class EntityManagerFactoryProvider extends SingletonTypeInjectableProvider<Context, EntityManagerFactory> {
+public class EntityManagerProvider extends SingletonTypeInjectableProvider<Context, EntityManager> {
 
     /**
      * Persistence unit name defined in persistence.xml file which is stored in META-INF directory.
      */
     public static final String PERSISTENCE_UNIT_NAME ="transactions-optional";
 
-    public EntityManagerFactoryProvider() {
-        super(EntityManagerFactory.class, Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME));
+    public EntityManagerProvider() {
+        super(EntityManager.class, Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME).createEntityManager());
     }
 }
