@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>name.vysoky</groupId>
-    <artifactId>rest-gae-maven-archetype</artifactId>
+    <artifactId>rest-archetype</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>rest-gae-maven-archetype</name>
+    <name>REST Archetype</name>
     <url>http://maven.apache.org</url>
 
     <properties>
