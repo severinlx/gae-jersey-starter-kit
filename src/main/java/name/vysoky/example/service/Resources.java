@@ -8,6 +8,7 @@ import name.vysoky.example.domain.Resource;
 import org.apache.commons.io.IOUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
@@ -24,7 +25,7 @@ public class Resources {
     private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
     @Context
-    EntityManager entityManager;
+    EntityManagerFactory entityManagerFactory;
 
     @Context
     UriInfo uriInfo;
@@ -39,8 +40,17 @@ public class Resources {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<Resource> list() {
-        Query query = entityManager.createQuery("SELECT r FROM Resource AS r");
-        return query.getResultList();
+        EntityManager entityManager = null;
+        try {
+            entityManager = entityManagerFactory.createEntityManager();
+            Query query = entityManager.createQuery("SELECT r FROM Resource AS r");
+            return query.getResultList();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Unable to list resources!", e);
+            return null;
+        } finally {
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
+        }
     }
 
     @GET
@@ -79,7 +89,9 @@ public class Resources {
     protected void write(Resource resource, InputStream inputStream) throws IOException {
         logger.log(Level.INFO, "Writing resource: " + resource);
         FileWriteChannel writeChannel = null;
+        EntityManager entityManager = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
             // Get a file service
             FileService fileService = FileServiceFactory.getFileService();
             // Create a new Blob file with mime-type
