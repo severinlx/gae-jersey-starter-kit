@@ -4,9 +4,7 @@ import name.vysoky.example.domain.Note;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -26,21 +24,22 @@ public class Notes {
     @Context
     EntityManager entityManager;
 
-//
+//    Functional only on EJB
 //    @PersistenceContext(unitName = "transactions-optional", type = PersistenceContextType.TRANSACTION)
 //    EntityManager entityManager;
 
-//    @GET
-//    @Produces({MediaType.TEXT_XML, MediaType.APPLICATION_JSON})
-//    public Note retrieve(@PathParam("id") Long id) {
-//        Note greeting = null;
-//        try {
-//            return entityManager.find(Note.class, id);
-//        } catch (Exception e) {
-//            logger.log(Level.WARNING, "Unable to retrieve greeting!", e);
-//        }
-//        return greeting;
-//    }
+    @GET
+    @Produces({MediaType.TEXT_XML, MediaType.APPLICATION_JSON})
+    @Path("/{id}")
+    public Note retrieve(@PathParam("id") Long id) {
+        Note greeting = null;
+        try {
+            return entityManager.find(Note.class, id);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to retrieve greeting!", e);
+        }
+        return greeting;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -59,35 +58,35 @@ public class Notes {
         return greetings;
     }
 
-//    @POST
-//    @Produces({MediaType.TEXT_XML, MediaType.APPLICATION_JSON})
-//    public Note create(Note greeting) {
-//        try {
-//            entityManager.persist(greeting);
-//        } catch (Exception e) {
-//            logger.log(Level.WARNING, "Unable to create greeting!", e);
-//        }
-//        return greeting;
-//    }
-//
-//    @PUT
-//    @Produces({MediaType.TEXT_XML, MediaType.APPLICATION_JSON})
-//    public Note update(Note greeting) {
-//        try {
-//            entityManager.persist(greeting);
-//        } catch (Exception e) {
-//            logger.log(Level.WARNING, "Unable to replace greeting!", e);
-//        }
-//        return greeting;
-//    }
-//
-//    @DELETE
-//    @Produces(MediaType.APPLICATION_JSON)
-//    public void delete(Note greeting) {
-//        try {
-//            entityManager.remove(greeting);
-//        } catch (Exception e) {
-//            logger.log(Level.WARNING, "Unable to delete greeting!", e);
-//        }
-//    }
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Note create(Note greeting) {
+        try {
+            entityManager.persist(greeting);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to create greeting!", e);
+        }
+        return greeting;
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    public Note update(Note greeting) {
+        try {
+            entityManager.persist(greeting);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to replace greeting!", e);
+        }
+        return greeting;
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    public void delete(Note greeting) {
+        try {
+            entityManager.remove(greeting);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to delete greeting!", e);
+        }
+    }
 }
