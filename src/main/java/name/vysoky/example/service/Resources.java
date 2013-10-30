@@ -7,9 +7,7 @@ import com.sun.jersey.multipart.FormDataParam;
 import name.vysoky.example.domain.Resource;
 import org.apache.commons.io.IOUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Query;
+import javax.persistence.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -24,8 +22,11 @@ public class Resources {
 
     private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
+    @PersistenceContext(unitName = "transactions-optional", type = PersistenceContextType.TRANSACTION)
+    EntityManager entityManager;
+
     @Context
-    EntityManagerFactory entityManagerFactory;
+    FileService fileService;
 
     @Context
     UriInfo uriInfo;
@@ -40,16 +41,14 @@ public class Resources {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<Resource> list() {
-        EntityManager entityManager = null;
         try {
-            entityManager = entityManagerFactory.createEntityManager();
-            Query query = entityManager.createQuery("SELECT r FROM Resource AS r");
+            String jpql = "SELECT r FROM Resource AS r";
+            logger.log(Level.FINEST, jpql);
+            Query query = entityManager.createQuery(jpql);
             return query.getResultList();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Unable to list resources!", e);
             return null;
-        } finally {
-            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
@@ -89,11 +88,7 @@ public class Resources {
     protected void write(Resource resource, InputStream inputStream) throws IOException {
         logger.log(Level.INFO, "Writing resource: " + resource);
         FileWriteChannel writeChannel = null;
-        EntityManager entityManager = null;
         try {
-            entityManager = entityManagerFactory.createEntityManager();
-            // Get a file service
-            FileService fileService = FileServiceFactory.getFileService();
             // Create a new Blob file with mime-type
             AppEngineFile file = fileService.createNewBlobFile(resource.getType());
             writeChannel = fileService.openWriteChannel(file, true);
@@ -108,7 +103,6 @@ public class Resources {
             resource.setPath(file.getFullPath());
             entityManager.persist(resource);
         } finally {
-            if (entityManager != null && entityManager.isOpen()) entityManager.close();
             if (writeChannel != null && writeChannel.isOpen()) writeChannel.close();
             if (inputStream != null) inputStream.close();
         }
@@ -118,8 +112,6 @@ public class Resources {
         logger.log(Level.INFO, "Reading resource: " + resource);
         FileReadChannel readChannel = null;
         try {
-            // Get a file service
-            FileService fileService = FileServiceFactory.getFileService();
             //AppEngineFile file = fileService.getBlobFile(new BlobKey(resource.getPath()));
             AppEngineFile file = new AppEngineFile(resource.getPath());
             // Lock = false et other people read at the same time
@@ -127,8 +119,8 @@ public class Resources {
             // Again, different standard Java ways of reading from the channel.
             BufferedReader reader = new BufferedReader(Channels.newReader(readChannel, "UTF8"));
             IOUtils.copy(reader, outputStream);
-            readChannel.close();
-            outputStream.close();
+//            readChannel.close();
+//            outputStream.close();
         }  finally {
             if (readChannel != null && readChannel.isOpen()) readChannel.close();
             if (outputStream != null) outputStream.close();
