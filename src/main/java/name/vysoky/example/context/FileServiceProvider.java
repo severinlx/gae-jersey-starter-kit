@@ -9,6 +9,7 @@ import javax.ws.rs.core.Context;
 
 /**
  * Google App Engine File service provider.
+ *
  * @author Jiri Vysoky
  */
 public class FileServiceProvider extends SingletonTypeInjectableProvider<Context, FileService> {

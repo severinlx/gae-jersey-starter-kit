@@ -4,9 +4,6 @@ import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.api.core.HttpRequestContext;
 import com.sun.jersey.core.spi.component.ComponentContext;
 import com.sun.jersey.server.impl.inject.AbstractHttpContextInjectable;
-import com.sun.jersey.spi.container.ContainerRequest;
-import com.sun.jersey.spi.container.ContainerResponse;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
 import com.sun.jersey.spi.inject.Injectable;
 import com.sun.jersey.spi.inject.PerRequestTypeInjectableProvider;
 
@@ -19,23 +16,21 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 /**
+ * Provide injectable persistence context which produce entity manager per request.
+ *
  * @author Jiri Vysoky
  */
-public class EntityManagerProvider
-        extends PerRequestTypeInjectableProvider<PersistenceContext, EntityManager>
-        implements ContainerResponseFilter {
+public class EntityManagerProvider extends PerRequestTypeInjectableProvider<PersistenceContext, EntityManager> {
 
     private static final Logger logger = Logger.getLogger(EntityManagerProvider.class.getName());
 
 
-    private Map<String, EntityManagerFactory> entityManagerFactoryPool = new HashMap<String, EntityManagerFactory>(1);
-    private Map<String, EntityManager> entityMangerPool = new HashMap<String, EntityManager>(100);
-
+    private Map<String, EntityManagerFactory> factoryMap = new HashMap<String, EntityManagerFactory>(1);
 
     public EntityManagerProvider() {
         super(EntityManager.class);
-        logger.log(Level.INFO, "Created entity manager provider.");
     }
 
     @Override
@@ -44,48 +39,26 @@ public class EntityManagerProvider
         return new AbstractHttpContextInjectable<EntityManager>() {
             @Override
             public EntityManager getValue(HttpContext httpContext) {
-                return createAndPoolEntityManager(httpContext.getRequest(), getEntityManagerFactory(unitName));
+                EntityManager entityManager = getFactory(unitName).createEntityManager();
+                HttpRequestContext requestContext = httpContext.getRequest();
+                requestContext
+
+                monitoredRequest.setEntityManager(entityManager);
+                logger.log(Level.INFO, "Created entity manager \"{0}\"!", entityManager);
+                return entityManager;
             }
         };
     }
 
-    @Override
-    public ContainerResponse filter(ContainerRequest request, ContainerResponse response) {
-        closeAndEvictEntityManager(request);
-        return response;
-    }
-
-    private String getKey(HttpRequestContext request) {
-        String key = request.toString();
-        key = key.substring(key.length() - 8);
-        return key;
-    }
-
-    private EntityManagerFactory getEntityManagerFactory(String unitName) {
-        if (!entityManagerFactoryPool.containsKey(unitName)) {
-            entityManagerFactoryPool.put(unitName, Persistence.createEntityManagerFactory(unitName));
-            logger.log(Level.INFO,  "Created entity manager factory from unit name {0}", unitName);
-        }
-        return entityManagerFactoryPool.get(unitName);
-    }
-
-    private EntityManager createAndPoolEntityManager(HttpRequestContext request, EntityManagerFactory entityManagerFactory) {
-        String key = getKey(request);
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        entityMangerPool.put(key, entityManager);
-        String[] params = { key, Integer.toString(entityMangerPool.size()) };
-        logger.log(Level.INFO,  "Created entity manager for request {0} - current pool size is {1}", params);
-        return entityManager;
-    }
-
-    private void closeAndEvictEntityManager(HttpRequestContext request) {
-        String key = getKey(request);
-        if (entityMangerPool.containsKey(key)) {
-            EntityManager entityManager = entityMangerPool.get(key);
-            if (entityManager != null && entityManager.isOpen()) entityManager.close();
-            entityMangerPool.remove(key);
-            String[] params = { key, Integer.toString(entityMangerPool.size()) };
-            logger.log(Level.INFO,  "Closed entity manager for request {0} - current pool size is {1}", params);
+    private EntityManagerFactory getFactory(String unitName) {
+        if (factoryMap.containsKey(unitName)) {
+            logger.log(Level.INFO, "Used previously cached entity manager factory for unit name \"{0}\"!", unitName);
+            return factoryMap.get(unitName);
+        } else {
+            EntityManagerFactory factory = Persistence.createEntityManagerFactory(unitName);
+            factoryMap.put(unitName, factory);
+            logger.log(Level.INFO, "Created new entity manager factory for unit name \"{0}\"", unitName);
+            return factory;
         }
     }
 }

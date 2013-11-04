@@ -45,11 +45,11 @@
         </init-param>
         <!--<init-param>-->
             <!--<param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>-->
-            <!--<param-value>name.vysoky.example.context.EntityManagerFilter</param-value>-->
+            <!--<param-value>name.vysoky.example.context.MonitoringFilter</param-value>-->
         <!--</init-param>-->
         <init-param>
             <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
-            <param-value>name.vysoky.example.context.EntityManagerProvider</param-value>
+            <param-value>name.vysoky.example.context.MonitoringFilter</param-value>
         </init-param>
     </filter>
     <filter-mapping>
