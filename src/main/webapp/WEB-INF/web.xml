@@ -5,7 +5,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
-    <display-name>Harpagon</display-name>
+    <display-name>Jersey Example</display-name>
 
     <!-- Jersey configuration -->
     <filter>
@@ -42,14 +42,6 @@
             <param-name>com.sun.jersey.config.property.JSPTemplatesBasePath</param-name>
             <!--<param-value>/WEB-INF/jsp</param-value>-->
             <param-value>/jsp</param-value>
-        </init-param>
-        <!--<init-param>-->
-            <!--<param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>-->
-            <!--<param-value>name.vysoky.example.context.EntityManagerFilter</param-value>-->
-        <!--</init-param>-->
-        <init-param>
-            <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
-            <param-value>name.vysoky.example.context.EntityManagerProvider</param-value>
         </init-param>
     </filter>
     <filter-mapping>

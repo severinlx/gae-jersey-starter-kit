@@ -22,8 +22,8 @@ public class Resources {
 
     private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
-    @PersistenceContext(unitName = "transactions-optional", type = PersistenceContextType.TRANSACTION)
-    EntityManager entityManager;
+    @PersistenceUnit(unitName = "transactions-optional")
+    private EntityManagerFactory entityManagerFactory;
 
     @Context
     FileService fileService;
@@ -41,14 +41,14 @@ public class Resources {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<Resource> list() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             String jpql = "SELECT r FROM Resource AS r";
             logger.log(Level.FINEST, jpql);
             Query query = entityManager.createQuery(jpql);
             return query.getResultList();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to list resources!", e);
-            return null;
+        } finally {
+            entityManager.close();
         }
     }
 
@@ -88,6 +88,7 @@ public class Resources {
     protected void write(Resource resource, InputStream inputStream) throws IOException {
         logger.log(Level.INFO, "Writing resource: " + resource);
         FileWriteChannel writeChannel = null;
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             // Create a new Blob file with mime-type
             AppEngineFile file = fileService.createNewBlobFile(resource.getType());
@@ -103,6 +104,7 @@ public class Resources {
             resource.setPath(file.getFullPath());
             entityManager.persist(resource);
         } finally {
+            entityManager.close();
             if (writeChannel != null && writeChannel.isOpen()) writeChannel.close();
             if (inputStream != null) inputStream.close();
         }
