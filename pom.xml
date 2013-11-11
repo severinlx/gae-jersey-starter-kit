@@ -80,6 +80,10 @@
                Replaced by ${datanucleus.version}.
             -->
             <exclusions>
+                <!--<exclusion>-->
+                    <!--<groupId>javax.jdo</groupId>-->
+                    <!--<artifactId>jdo-api</artifactId>-->
+                <!--</exclusion>-->
                 <exclusion>
                     <groupId>org.datanucleus</groupId>
                     <artifactId>datanucleus-enhancer</artifactId>

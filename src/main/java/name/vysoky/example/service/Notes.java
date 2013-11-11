@@ -2,10 +2,7 @@ package name.vysoky.example.service;
 
 import name.vysoky.example.domain.Note;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
-import javax.persistence.Query;
+import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -28,11 +25,12 @@ public class Notes {
     @Produces({MediaType.TEXT_XML, MediaType.APPLICATION_JSON})
     @Path("/{id}")
     public Note retrieve(@PathParam("id") Long id) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
             return entityManager.find(Note.class, id);
         } finally {
-            entityManager.close();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
@@ -40,47 +38,66 @@ public class Notes {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<Note> list() {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
             Query query = entityManager.createQuery("SELECT n FROM Note AS n");
             return (List<Note>) query.getResultList();
         } finally {
-            entityManager.close();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Note create(Note greeting) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
+        EntityTransaction entityTransaction = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
+            entityTransaction = entityManager.getTransaction();
+            entityTransaction.begin();
             entityManager.persist(greeting);
+            entityTransaction.commit();
             return greeting;
         } finally {
-            entityManager.close();
+            if (entityTransaction != null  && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     public Note update(Note greeting) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
+        EntityTransaction entityTransaction = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
+            entityTransaction = entityManager.getTransaction();
+            entityTransaction.begin();
             entityManager.persist(greeting);
+            entityTransaction.commit();
             return greeting;
         } finally {
-            entityManager.close();
+            if (entityTransaction != null  && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     public void delete(Note greeting) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
+        EntityTransaction entityTransaction = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
+            entityTransaction = entityManager.getTransaction();
+            entityTransaction.begin();
             entityManager.remove(greeting);
+            entityTransaction.commit();
         } finally {
-            entityManager.close();
+            if (entityTransaction != null  && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 }
