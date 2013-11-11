@@ -1,16 +1,23 @@
 package name.vysoky.example.service;
 
-import com.google.appengine.api.files.*;
+import com.google.appengine.api.files.AppEngineFile;
+import com.google.appengine.api.files.FileReadChannel;
+import com.google.appengine.api.files.FileService;
+import com.google.appengine.api.files.FileWriteChannel;
 import com.sun.jersey.api.view.Viewable;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import name.vysoky.example.domain.Resource;
 import org.apache.commons.io.IOUtils;
 
-import javax.persistence.*;
-import javax.servlet.http.HttpServletResponse;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
+import javax.persistence.Query;
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.util.List;
@@ -20,6 +27,8 @@ import java.util.logging.Logger;
 @Path("/resources")
 public class Resources {
 
+    public static final String CHANNEL_ENCODING = "UTF8";
+
     private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
     @PersistenceUnit(unitName = "transactions-optional")
@@ -28,14 +37,14 @@ public class Resources {
     @Context
     FileService fileService;
 
-    @Context
-    UriInfo uriInfo;
-
-    @Context
-    HttpHeaders headers;
-
-    @Context
-    HttpServletResponse response;
+//    @Context
+//    UriInfo uriInfo;
+//
+//    @Context
+//    HttpHeaders headers;
+//
+//    @Context
+//    HttpServletResponse response;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -88,25 +97,27 @@ public class Resources {
     protected void write(Resource resource, InputStream inputStream) throws IOException {
         logger.log(Level.INFO, "Writing resource: " + resource);
         FileWriteChannel writeChannel = null;
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
+        InputStreamReader inputStreamReader = null;
+        PrintWriter printWriter = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
             // Create a new Blob file with mime-type
             AppEngineFile file = fileService.createNewBlobFile(resource.getType());
             writeChannel = fileService.openWriteChannel(file, true);
+            inputStreamReader = new InputStreamReader(inputStream);
             // Different standard Java ways of writing to the channel are possible. Here we use a PrintWriter:
-            PrintWriter out = new PrintWriter(Channels.newWriter(writeChannel, "UTF8"));
-            InputStreamReader in = new InputStreamReader(inputStream);
-            // Now finalize
-            IOUtils.copy(in, out);
-            out.close();
-            writeChannel.closeFinally();
+            printWriter = new PrintWriter(Channels.newWriter(writeChannel, CHANNEL_ENCODING));
+            IOUtils.copy(inputStreamReader, printWriter);
             // Set path to resource
             resource.setPath(file.getFullPath());
             entityManager.persist(resource);
         } finally {
-            entityManager.close();
-            if (writeChannel != null && writeChannel.isOpen()) writeChannel.close();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
+            if (inputStreamReader != null) inputStreamReader.close();
             if (inputStream != null) inputStream.close();
+            if (printWriter != null) printWriter.close();
+            if (writeChannel != null && writeChannel.isOpen()) writeChannel.close();
         }
     }
 
@@ -119,10 +130,8 @@ public class Resources {
             // Lock = false et other people read at the same time
             readChannel = fileService.openReadChannel(file, false);
             // Again, different standard Java ways of reading from the channel.
-            BufferedReader reader = new BufferedReader(Channels.newReader(readChannel, "UTF8"));
+            BufferedReader reader = new BufferedReader(Channels.newReader(readChannel, CHANNEL_ENCODING));
             IOUtils.copy(reader, outputStream);
-//            readChannel.close();
-//            outputStream.close();
         }  finally {
             if (readChannel != null && readChannel.isOpen()) readChannel.close();
             if (outputStream != null) outputStream.close();
