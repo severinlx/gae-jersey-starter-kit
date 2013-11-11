@@ -4,7 +4,6 @@ import com.google.appengine.api.files.AppEngineFile;
 import com.google.appengine.api.files.FileReadChannel;
 import com.google.appengine.api.files.FileService;
 import com.google.appengine.api.files.FileWriteChannel;
-import com.sun.jersey.api.view.Viewable;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import name.vysoky.example.domain.File;
@@ -59,13 +58,6 @@ public class Files {
         } finally {
             entityManager.close();
         }
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_XHTML_XML)
-    public Response listHTML() {
-        Viewable view = new Viewable("/files/list", list());
-        return Response.ok(view).build();
     }
 
     /**

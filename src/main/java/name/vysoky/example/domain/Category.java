@@ -20,7 +20,6 @@ public class Category implements Serializable {
     @OneToMany
     Set<Note> notes;
 
-
     public Long getId() {
         return id;
     }
