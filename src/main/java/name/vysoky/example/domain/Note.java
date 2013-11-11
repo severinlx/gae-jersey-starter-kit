@@ -22,6 +22,9 @@ public class Note implements Serializable {
     private Date dateCreated;
     private String message;
 
+    @ManyToOne
+    private Category category;
+
     public Long getId() {
         return id;
     }
@@ -44,6 +47,14 @@ public class Note implements Serializable {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
     @Override

@@ -11,6 +11,7 @@
         <!-- POJO list -->
         <class>name.vysoky.example.domain.File</class>
         <class>name.vysoky.example.domain.Note</class>
+        <class>name.vysoky.example.domain.Category</class>
         <!-- GAE settings -->
         <properties>
             <property name="datanucleus.NontransactionalRead" value="true"/>
