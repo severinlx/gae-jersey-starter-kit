@@ -7,7 +7,7 @@ import com.google.appengine.api.files.FileWriteChannel;
 import com.sun.jersey.api.view.Viewable;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
-import name.vysoky.example.domain.Resource;
+import name.vysoky.example.domain.File;
 import org.apache.commons.io.IOUtils;
 
 import javax.persistence.EntityManager;
@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Path("/resources")
-public class Resources {
+@Path("/files")
+public class Files {
 
     public static final String CHANNEL_ENCODING = "UTF8";
 
-    private static final Logger logger = Logger.getLogger(Resources.class.getName());
+    private static final Logger logger = Logger.getLogger(Files.class.getName());
 
     @PersistenceUnit(unitName = "transactions-optional")
     private EntityManagerFactory entityManagerFactory;
@@ -49,10 +49,10 @@ public class Resources {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
-    public List<Resource> list() {
+    public List<File> list() {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            String jpql = "SELECT r FROM Resource AS r";
+            String jpql = "SELECT r FROM File AS r";
             logger.log(Level.FINEST, jpql);
             Query query = entityManager.createQuery(jpql);
             return query.getResultList();
@@ -64,7 +64,7 @@ public class Resources {
     @GET
     @Produces(MediaType.APPLICATION_XHTML_XML)
     public Response listHTML() {
-        Viewable view = new Viewable("/resources/list", list());
+        Viewable view = new Viewable("/files/list", list());
         return Response.ok(view).build();
     }
 
@@ -82,9 +82,9 @@ public class Resources {
             @FormDataParam("file") InputStream uploadedInputStream,
             @FormDataParam("file") FormDataContentDisposition fileDetail) {
         try {
-            Resource resource = new Resource(fileDetail.getName(), fileDetail.getSize(), fileDetail.getType());
-            write(resource, uploadedInputStream);
-            String output = "File uploaded to: " + resource.getPath();
+            File file = new File(fileDetail.getName(), fileDetail.getSize(), fileDetail.getType());
+            write(file, uploadedInputStream);
+            String output = "File uploaded to: " + file.getPath();
             logger.log(Level.INFO, output);
             return Response.status(200).entity(output).build();
         } catch (Exception e) {
@@ -94,8 +94,8 @@ public class Resources {
         }
     }
 
-    protected void write(Resource resource, InputStream inputStream) throws IOException {
-        logger.log(Level.INFO, "Writing resource: " + resource);
+    void write(File file, InputStream inputStream) throws IOException {
+        logger.log(Level.INFO, "Writing resource: " + file);
         FileWriteChannel writeChannel = null;
         EntityManager entityManager = null;
         InputStreamReader inputStreamReader = null;
@@ -103,15 +103,15 @@ public class Resources {
         try {
             entityManager = entityManagerFactory.createEntityManager();
             // Create a new Blob file with mime-type
-            AppEngineFile file = fileService.createNewBlobFile(resource.getType());
-            writeChannel = fileService.openWriteChannel(file, true);
+            AppEngineFile appEngineFile = fileService.createNewBlobFile(file.getType());
+            writeChannel = fileService.openWriteChannel(appEngineFile, true);
             inputStreamReader = new InputStreamReader(inputStream);
             // Different standard Java ways of writing to the channel are possible. Here we use a PrintWriter:
             printWriter = new PrintWriter(Channels.newWriter(writeChannel, CHANNEL_ENCODING));
             IOUtils.copy(inputStreamReader, printWriter);
             // Set path to resource
-            resource.setPath(file.getFullPath());
-            entityManager.persist(resource);
+            file.setPath(appEngineFile.getFullPath());
+            entityManager.persist(file);
         } finally {
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
             if (inputStreamReader != null) inputStreamReader.close();
@@ -121,19 +121,21 @@ public class Resources {
         }
     }
 
-    protected void read(Resource resource, OutputStream outputStream) throws IOException {
-        logger.log(Level.INFO, "Reading resource: " + resource);
+    void read(File file, OutputStream outputStream) throws IOException {
+        logger.log(Level.INFO, "Reading resource: " + file);
         FileReadChannel readChannel = null;
+        BufferedReader bufferedReader = null;
         try {
             //AppEngineFile file = fileService.getBlobFile(new BlobKey(resource.getPath()));
-            AppEngineFile file = new AppEngineFile(resource.getPath());
+            AppEngineFile appEngineFile = new AppEngineFile(file.getPath());
             // Lock = false et other people read at the same time
-            readChannel = fileService.openReadChannel(file, false);
+            readChannel = fileService.openReadChannel(appEngineFile, false);
             // Again, different standard Java ways of reading from the channel.
-            BufferedReader reader = new BufferedReader(Channels.newReader(readChannel, CHANNEL_ENCODING));
-            IOUtils.copy(reader, outputStream);
-        }  finally {
+            bufferedReader = new BufferedReader(Channels.newReader(readChannel, CHANNEL_ENCODING));
+            IOUtils.copy(bufferedReader, outputStream);
+        } finally {
             if (readChannel != null && readChannel.isOpen()) readChannel.close();
+            if (bufferedReader != null) bufferedReader.close();
             if (outputStream != null) outputStream.close();
         }
     }

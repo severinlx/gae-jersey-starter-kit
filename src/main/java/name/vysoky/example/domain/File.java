@@ -13,7 +13,7 @@ import java.io.Serializable;
  */
 @Entity
 @SuppressWarnings("unused")
-public class Resource implements Serializable {
+public class File implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,10 +23,10 @@ public class Resource implements Serializable {
     private String type;
     private String path;
 
-    public Resource() {
+    public File() {
     }
 
-    public Resource(String name, Long size, String type) {
+    public File(String name, Long size, String type) {
         this.name = name;
         this.size = size;
         this.type = type;

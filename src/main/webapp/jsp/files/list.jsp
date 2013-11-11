@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
-<%@ page import="name.vysoky.example.domain.Resource" %>
+<%@ page import="name.vysoky.example.domain.File" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,7 +11,7 @@
 <%@include file="/jsp/header.jsp" %>
 <%
     @SuppressWarnings("unchecked")
-    List<Resource> resources = (List<Resource>) request.getAttribute("it");
+    List<File> files = (List<File>) request.getAttribute("it");
 %>
 <h1>Upload resource</h1>
 <form action="<%= request.getContextPath() + "/resources/upload"%>" method="post" enctype="multipart/form-data">
@@ -20,8 +20,8 @@
 </form>
 <h1>Resources</h1>
 <ul>
-<% for (Resource resource : resources) { %>
-    <li><%= resource.getPath() %></li>
+<% for (File file : files) { %>
+    <li><%= file.getPath() %></li>
 <% } %>
 </ul>
 <%@include file="/jsp/footer.jsp" %>

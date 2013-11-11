@@ -10,7 +10,7 @@
 <ul>
     <li><a href="hello">Hello Jersey</a></li>
     <li><a href="notes">Notes JSON</a></li>
-    <li><a href="resources">Resources</a></li>
+    <li><a href="files">Files</a></li>
 </ul>
 <%@include file="/jsp/footer.jsp" %>
 </body>
