@@ -35,7 +35,7 @@
         <!-- Services location - package -->
         <init-param>
             <param-name>com.sun.jersey.config.property.packages</param-name>
-            <param-value>name.vysoky.example.service</param-value>
+            <param-value>name.vysoky.example.resources</param-value>
         </init-param>
         <!-- Templates location - relative path -->
         <init-param>

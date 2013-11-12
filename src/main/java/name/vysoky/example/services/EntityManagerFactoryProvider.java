@@ -1,4 +1,4 @@
-package name.vysoky.example.context;
+package name.vysoky.example.services;
 
 import com.sun.jersey.spi.inject.SingletonTypeInjectableProvider;
 

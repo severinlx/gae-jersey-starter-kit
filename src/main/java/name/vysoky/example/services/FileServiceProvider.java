@@ -1,4 +1,4 @@
-package name.vysoky.example.context;
+package name.vysoky.example.services;
 
 import com.google.appengine.api.files.FileService;
 import com.google.appengine.api.files.FileServiceFactory;
@@ -8,7 +8,7 @@ import javax.ws.rs.core.Context;
 
 
 /**
- * Google App Engine File service provider.
+ * Google MainView Engine File resources provider.
  *
  * @author Jiri Vysoky
  */

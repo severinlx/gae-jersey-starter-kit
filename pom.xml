@@ -36,7 +36,7 @@
         </repository>
     </repositories>
     <dependencies>
-        <!-- Google App Engine dependencies -->
+        <!-- Google MainView Engine dependencies -->
         <dependency>
             <!-- This library provides the core GAE features -->
             <groupId>com.google.appengine</groupId>
@@ -91,7 +91,7 @@
             </exclusions>
         </dependency>
 
-        <!-- Google App Engine provided libraries -->
+        <!-- Google MainView Engine provided libraries -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>

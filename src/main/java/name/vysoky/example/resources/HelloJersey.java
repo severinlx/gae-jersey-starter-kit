@@ -1,4 +1,4 @@
-package name.vysoky.example.service;
+package name.vysoky.example.resources;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

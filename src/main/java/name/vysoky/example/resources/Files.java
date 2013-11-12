@@ -1,4 +1,4 @@
-package name.vysoky.example.service;
+package name.vysoky.example.resources;
 
 import com.google.appengine.api.files.AppEngineFile;
 import com.google.appengine.api.files.FileReadChannel;
@@ -16,7 +16,6 @@ import javax.persistence.Query;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.util.List;
@@ -61,16 +60,15 @@ public class Files {
     }
 
     /**
-     * On Google App Engine - add file jersey-multipart-config.properties and bufferThreshold = -1 parameter
+     * On Google MainView Engine - add file jersey-multipart-config.properties and bufferThreshold = -1 parameter
      * @param uploadedInputStream uploaded input stream
      * @param fileDetail file detail
      * @return result
      */
     @POST
-    @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    //@Produces(MediaType.APPLICATION_XHTML_XML)
-    public Response createHTML(
+    @Produces(MediaType.APPLICATION_JSON)
+    public File create(
             @FormDataParam("file") InputStream uploadedInputStream,
             @FormDataParam("file") FormDataContentDisposition fileDetail) {
         try {
@@ -78,11 +76,10 @@ public class Files {
             write(file, uploadedInputStream);
             String output = "File uploaded to: " + file.getPath();
             logger.log(Level.INFO, output);
-            return Response.status(200).entity(output).build();
+            return file;
         } catch (Exception e) {
-            String output = "Unable to upload file!";
-            logger.log(Level.SEVERE, output, e);
-            return Response.status(200).entity(output).build();
+            logger.log(Level.SEVERE, "Unable to upload file!");
+            return null;
         }
     }
 

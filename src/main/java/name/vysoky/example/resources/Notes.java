@@ -1,15 +1,17 @@
-package name.vysoky.example.service;
+package name.vysoky.example.resources;
 
 import name.vysoky.example.domain.Note;
 
 import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Greetings REST service.
+ * Greetings REST resources.
  *
  * @author Jiri Vysoky
  */
@@ -22,19 +24,6 @@ public class Notes {
     private EntityManagerFactory entityManagerFactory;
 
     @GET
-    @Produces({MediaType.TEXT_XML, MediaType.APPLICATION_JSON})
-    @Path("/{id}")
-    public Note retrieve(@PathParam("id") Long id) {
-        EntityManager entityManager = null;
-        try {
-            entityManager = entityManagerFactory.createEntityManager();
-            return entityManager.find(Note.class, id);
-        } finally {
-            if (entityManager != null && entityManager.isOpen()) entityManager.close();
-        }
-    }
-
-    @GET
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<Note> list() {
@@ -42,7 +31,9 @@ public class Notes {
         try {
             entityManager = entityManagerFactory.createEntityManager();
             Query query = entityManager.createQuery("SELECT n FROM Note AS n");
-            return (List<Note>) query.getResultList();
+            List<Note> notes = (List<Note>) query.getResultList();
+            logger.log(Level.INFO, "Listed {0}", notes);
+            return notes;
         } finally {
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
@@ -50,53 +41,72 @@ public class Notes {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Note create(Note greeting) {
+    public Note create(Note note) {
         EntityManager entityManager = null;
         EntityTransaction entityTransaction = null;
         try {
             entityManager = entityManagerFactory.createEntityManager();
             entityTransaction = entityManager.getTransaction();
             entityTransaction.begin();
-            entityManager.persist(greeting);
+            entityManager.persist(note);
             entityTransaction.commit();
-            return greeting;
+            logger.log(Level.INFO, "Created {0}", note);
+            return note;
         } finally {
-            if (entityTransaction != null  && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityTransaction != null && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{id}")
+    public Note retrieve(@PathParam("id") Long id) {
+        EntityManager entityManager = null;
+        try {
+            entityManager = entityManagerFactory.createEntityManager();
+            Note note = entityManager.find(Note.class, id);
+            if (note == null) throw new WebApplicationException(Response.Status.NOT_FOUND);
+            logger.log(Level.INFO, "Retrieved {0}", note);
+            return note;
+        } finally {
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    public Note update(Note greeting) {
+    public Note update(Note note) {
         EntityManager entityManager = null;
         EntityTransaction entityTransaction = null;
         try {
             entityManager = entityManagerFactory.createEntityManager();
             entityTransaction = entityManager.getTransaction();
             entityTransaction.begin();
-            entityManager.persist(greeting);
+            entityManager.persist(note);
             entityTransaction.commit();
-            return greeting;
+            logger.log(Level.INFO, "Persisted {0}", note);
+            return note;
         } finally {
-            if (entityTransaction != null  && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityTransaction != null && entityTransaction.isActive()) entityTransaction.rollback();
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
-    public void delete(Note greeting) {
+    public void delete(Note note) {
         EntityManager entityManager = null;
         EntityTransaction entityTransaction = null;
         try {
             entityManager = entityManagerFactory.createEntityManager();
             entityTransaction = entityManager.getTransaction();
             entityTransaction.begin();
-            entityManager.remove(greeting);
+            entityManager.remove(note);
             entityTransaction.commit();
+            logger.log(Level.INFO, "Deleted {0}", note);
         } finally {
-            if (entityTransaction != null  && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityTransaction != null && entityTransaction.isActive()) entityTransaction.rollback();
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
