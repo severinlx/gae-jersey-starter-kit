@@ -9,10 +9,7 @@ import com.sun.jersey.multipart.FormDataParam;
 import name.vysoky.example.domain.File;
 import org.apache.commons.io.IOUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
-import javax.persistence.Query;
+import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -88,13 +85,16 @@ public class Files {
     @Consumes(MediaType.APPLICATION_JSON)
     public void delete(File file) {
         EntityManager entityManager = null;
+        EntityTransaction entityTransaction = null;
         try {
-            //TODO: Delete also from blobstore!
             entityManager = entityManagerFactory.createEntityManager();
+            entityTransaction = entityManager.getTransaction();
             file = entityManager.find(File.class, file.getId()); // reload
-
             entityManager.remove(file);
+            //TODO: Delete also from blobstore!
+            entityTransaction.commit();
         } finally {
+            if (entityTransaction != null && entityTransaction.isActive()) entityTransaction.rollback();
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
