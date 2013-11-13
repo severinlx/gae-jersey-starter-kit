@@ -57,68 +57,42 @@ File.prototype.getSize = function() {
 // ---------------------------------------------------------------------------------------------------------------------
 // jQuery Components
 
-  /**
+/**
  * Create file upload form.
  * Element must be <form/>
  * @returns {jQuery}
  */
 $.fn.fileUploadForm = function() {
     if (!this.is('form')) return this;
+    var form = this;
 
-    var fileInput = $('<input type="file" name="file" size="45" />');
+    var doSubmit = function() {
+        var formData = new FormData(form[0]);
+        console.log(formData);
+        $.ajax({
+            url: '/files',
+            type: 'POST',
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+    };
 
     var fileFormGroup = $('<div class="form-group"/>');
     fileFormGroup.append('<label for="file">Select a file:</label>');
-    fileFormGroup.append(fileInput);
+    fileFormGroup.append('<input type="file" name="file" size="45" />');
 
-    var form = this;
+    var submitButton = $('<input type="button" value="Upload It" class="btn btn-danger" />');
+    submitButton.on('click', doSubmit);
+
     form.empty();
     //form.attr('action', '/files');
     //form.attr('method', 'post');
     form.attr('enctype', 'multipart/form-data');
     form.addClass('form-inline panel panel-default');
     form.append(fileFormGroup);
-
-    var completeHandler = function() {
-        $('body').fileBody();
-    };
-
-    var submitButton = $('<input type="button" value="Upload It" class="btn btn-danger" />');
     form.append(submitButton);
-
-//    $(fileInput).on('change', function() {
-//        var file = this.files[0];
-//        name = file.name;
-//        size = file.size;
-//        type = file.type;
-//        //Your validation
-//    });
-
-    $(submitButton).on('click', function() {
-        var formData = new FormData($('form')[0]);
-        $.ajax({
-            url: '/files',
-            type: 'POST',
-//            xhr: function() {  // Custom XMLHttpRequest
-//                var myXhr = $.ajaxSettings.xhr();
-//                if (myXhr.upload){ // Check if upload property exists
-//                    myXhr.upload.addEventListener('progress',progressHandlingFunction, false); // For handling the progress of the upload
-//                }
-//                return myXhr;
-//            },
-            //Ajax events
-            //beforeSend: beforeSendHandler,
-            success: completeHandler,
-            //error: errorHandler,
-            // Form data
-            data: formData,
-            //Options to tell jQuery not to process data or worry about content-type.
-            cache: false,
-            contentType: false,
-            processData: false
-        });
-    });
-
     return form;
 };
 
@@ -178,9 +152,11 @@ $.fn.fileTable = function(files) {
  * Element must be <div/>
  * @returns {jQuery}
  */
-$.fn.fileDiv = function() {
+$.fn.filePanel = function() {
     if (!this.is('div')) return this;
     var div = this;
+    div.attr('id', 'file-panel');
+    div.empty();
     var files = [];
     var render = function() {
         div.append($('<h1>Files</h1>'));
@@ -212,11 +188,21 @@ $.fn.fileBody = function() {
     if (!this.is('body')) return this;
     var body = this;
     body.empty();
-    body.append($('<div id="files"/>').fileDiv());
+    body.append($('<div/>').filePanel());
     return body;
 };
 
 $(document).ready(function() {
     $('body').fileBody();
+});
+
+$(document).ajaxSuccess(function(event, xhr, settings) {
+    if (event.type == 'ajaxSuccess' && (settings.type == 'POST' || settings.type == 'PUT' || settings == 'DELETE')) {
+        switch (settings.url) {
+            case "/files":
+                $('div#file-panel').filePanel();
+                break;
+        }
+    }
 });
 
