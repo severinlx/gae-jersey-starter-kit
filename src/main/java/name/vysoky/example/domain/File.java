@@ -26,12 +26,6 @@ public class File implements Serializable {
     public File() {
     }
 
-    public File(String name, Long size, String type) {
-        this.name = name;
-        this.size = size;
-        this.type = type;
-    }
-
     public Long getId() {
         return id;
     }

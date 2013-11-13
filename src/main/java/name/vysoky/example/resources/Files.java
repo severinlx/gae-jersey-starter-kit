@@ -4,7 +4,7 @@ import com.google.appengine.api.files.AppEngineFile;
 import com.google.appengine.api.files.FileReadChannel;
 import com.google.appengine.api.files.FileService;
 import com.google.appengine.api.files.FileWriteChannel;
-import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataParam;
 import name.vysoky.example.domain.File;
 import org.apache.commons.io.IOUtils;
@@ -23,8 +23,6 @@ import java.util.logging.Logger;
 
 @Path("/files")
 public class Files {
-
-    public static final String CHANNEL_ENCODING = "UTF8";
 
     private static final Logger logger = Logger.getLogger(Files.class.getName());
 
@@ -61,25 +59,35 @@ public class Files {
 
     /**
      * On Google MainView Engine - add file jersey-multipart-config.properties and bufferThreshold = -1 parameter
-     * @param uploadedInputStream uploaded input stream
-     * @param fileDetail file detail
+     * @param inputStream uploaded input stream
      * @return result
      */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public File create(
-            @FormDataParam("file") InputStream uploadedInputStream,
-            @FormDataParam("file") FormDataContentDisposition fileDetail) {
+            @FormDataParam("file") InputStream inputStream,
+            @FormDataParam("file") FormDataBodyPart body) {
+        EntityManager entityManager = null;
+        EntityTransaction entityTransaction = null;
         try {
-            File file = new File(fileDetail.getFileName(), fileDetail.getSize(), fileDetail.getType());
-            write(file, uploadedInputStream);
+            File file = new File();
+            file.setName(body.getContentDisposition().getFileName());
+            file.setType(body.getMediaType().toString());
+            entityManager = entityManagerFactory.createEntityManager();
+            entityTransaction = entityManager.getTransaction();
+            entityTransaction.begin();
+            write(file, inputStream);
+            entityManager.persist(file);
+            entityTransaction.commit();
             String output = "File uploaded to: " + file.getPath();
             logger.log(Level.INFO, output);
             return file;
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to upload file!");
-            return null;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to store BLOB!", e);
+        } finally {
+            if (entityTransaction != null && entityTransaction.isActive()) entityTransaction.rollback();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
@@ -92,17 +100,8 @@ public class Files {
             final File file = entityManager.find(File.class, id);
             if (file == null) throw new WebApplicationException(Response.Status.NOT_FOUND);
             logger.log(Level.INFO, "Retrieved {0}", file);
-            StreamingOutput stream = new StreamingOutput() {
-                @Override
-                public void write(OutputStream output) throws IOException, WebApplicationException {
-                    try {
-                        read(file, output);
-                    } catch (Exception e) {
-                        throw new WebApplicationException(e);
-                    }
-                }
-            };
-            return Response.ok(stream).build();
+            FileStreamingOutput stream = new FileStreamingOutput(file);
+            return Response.ok(stream, file.getType()).build();
         } finally {
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
@@ -119,8 +118,10 @@ public class Files {
             entityTransaction.begin();
             file = entityManager.find(File.class, file.getId()); // reload
             entityManager.remove(file);
-            //TODO: Delete also from blobstore!
+            drop(file);
             entityTransaction.commit();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to drop BLOB!", e);
         } finally {
             if (entityTransaction != null && entityTransaction.isActive()) entityTransaction.rollback();
             if (entityManager != null && entityManager.isOpen()) entityManager.close();
@@ -128,48 +129,57 @@ public class Files {
     }
 
     void write(File file, InputStream inputStream) throws IOException {
-        logger.log(Level.INFO, "Writing resource: " + file);
+        logger.log(Level.INFO, "Writing file: " + file);
         FileWriteChannel writeChannel = null;
-        EntityManager entityManager = null;
-        InputStreamReader inputStreamReader = null;
-        PrintWriter printWriter = null;
+        OutputStream outputStream = null;
         try {
-            entityManager = entityManagerFactory.createEntityManager();
-            // Create a new Blob file with mime-type
-            AppEngineFile appEngineFile = fileService.createNewBlobFile(file.getType());
+            AppEngineFile appEngineFile = fileService.createNewBlobFile(file.getType(), file.getName());
             writeChannel = fileService.openWriteChannel(appEngineFile, true);
-            inputStreamReader = new InputStreamReader(inputStream);
-            // Different standard Java ways of writing to the channel are possible. Here we use a PrintWriter:
-            printWriter = new PrintWriter(Channels.newWriter(writeChannel, CHANNEL_ENCODING));
-            IOUtils.copy(inputStreamReader, printWriter);
-            // Set path to resource
+            outputStream = new BufferedOutputStream(Channels.newOutputStream(writeChannel));
+            int bytes = IOUtils.copy(inputStream, outputStream);
+            outputStream.flush();
+            writeChannel.closeFinally();
+            // add missing values to file
             file.setPath(appEngineFile.getFullPath());
-            entityManager.persist(file);
+            file.setSize((long) bytes);
         } finally {
-            if (entityManager != null && entityManager.isOpen()) entityManager.close();
-            if (inputStreamReader != null) inputStreamReader.close();
             if (inputStream != null) inputStream.close();
-            if (printWriter != null) printWriter.close();
+            if (outputStream != null) outputStream.close();
             if (writeChannel != null && writeChannel.isOpen()) writeChannel.closeFinally();
         }
     }
 
     void read(File file, OutputStream outputStream) throws IOException {
-        logger.log(Level.INFO, "Reading resource: " + file);
+        logger.log(Level.INFO, "Reading file: " + file);
         FileReadChannel readChannel = null;
-        BufferedReader bufferedReader = null;
+        InputStream inputStream = null;
         try {
-            //AppEngineFile file = fileService.getBlobFile(new BlobKey(resource.getPath()));
             AppEngineFile appEngineFile = new AppEngineFile(file.getPath());
-            // Lock = false et other people read at the same time
             readChannel = fileService.openReadChannel(appEngineFile, false);
-            // Again, different standard Java ways of reading from the channel.
-            bufferedReader = new BufferedReader(Channels.newReader(readChannel, CHANNEL_ENCODING));
-            IOUtils.copy(bufferedReader, outputStream);
+            inputStream = new BufferedInputStream(Channels.newInputStream(readChannel));
+            IOUtils.copy(inputStream, outputStream);
         } finally {
-            if (readChannel != null && readChannel.isOpen()) readChannel.close();
-            if (bufferedReader != null) bufferedReader.close();
+            if (inputStream != null) inputStream.close();
             if (outputStream != null) outputStream.close();
+            if (readChannel != null && readChannel.isOpen()) readChannel.close();
+        }
+    }
+
+    void drop(File file) throws IOException {
+        logger.log(Level.INFO, "Deleting file: " + file);
+        AppEngineFile appEngineFile = new AppEngineFile(file.getPath());
+        fileService.delete(appEngineFile);
+    }
+
+    private class FileStreamingOutput implements StreamingOutput {
+        private File file;
+
+        public FileStreamingOutput(File file) {
+            this.file = file;
+        }
+        @Override
+        public void write(OutputStream output) throws IOException, WebApplicationException {
+            read(file, output);
         }
     }
 }
