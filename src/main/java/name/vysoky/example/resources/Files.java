@@ -70,7 +70,7 @@ public class Files {
             @FormDataParam("file") InputStream uploadedInputStream,
             @FormDataParam("file") FormDataContentDisposition fileDetail) {
         try {
-            File file = new File(fileDetail.getName(), fileDetail.getSize(), fileDetail.getType());
+            File file = new File(fileDetail.getFileName(), fileDetail.getSize(), fileDetail.getType());
             write(file, uploadedInputStream);
             String output = "File uploaded to: " + file.getPath();
             logger.log(Level.INFO, output);
@@ -89,6 +89,7 @@ public class Files {
         try {
             entityManager = entityManagerFactory.createEntityManager();
             entityTransaction = entityManager.getTransaction();
+            entityTransaction.begin();
             file = entityManager.find(File.class, file.getId()); // reload
             entityManager.remove(file);
             //TODO: Delete also from blobstore!
