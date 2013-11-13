@@ -48,14 +48,15 @@ public class Files {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public List<File> list() {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityManager entityManager = null;
         try {
+            entityManager = entityManagerFactory.createEntityManager();
             String jpql = "SELECT r FROM File AS r";
             logger.log(Level.FINEST, jpql);
             Query query = entityManager.createQuery(jpql);
             return query.getResultList();
         } finally {
-            entityManager.close();
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 
@@ -80,6 +81,21 @@ public class Files {
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Unable to upload file!");
             return null;
+        }
+    }
+
+    @DELETE
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void delete(File file) {
+        EntityManager entityManager = null;
+        try {
+            //TODO: Delete also from blobstore!
+            entityManager = entityManagerFactory.createEntityManager();
+            file = entityManager.find(File.class, file.getId()); // reload
+
+            entityManager.remove(file);
+        } finally {
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
         }
     }
 

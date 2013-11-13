@@ -109,6 +109,7 @@ $.fn.fileTableHead = function() {
     tr.append($('<th/>').html('Path'));
     tr.append($('<th/>').html('Type'));
     tr.append($('<th/>').html('Size'));
+    tr.append($('<th/>').html('Action'));
     return tr;
 };
 
@@ -120,13 +121,29 @@ $.fn.fileTableHead = function() {
  */
 $.fn.fileTableData = function(file) {
     if (!this.is('tr')) return this;
+    var doDelete = function() {
+        console.log(file);
+        var data = JSON.stringify(file);
+        console.log(data);
+        $.ajax({
+            dataType: "json",
+            contentType: "application/json",
+            accept:"application/json",
+            type: "DELETE",
+            url: '/files',
+            data: data
+        });
+    };
     var tr = this;
+    var a = $('<input type="buttons" value="Delete" class="btn btn-danger"/>');
+    a.on('click', doDelete);
     tr.attr('id', 'file-' + file.getId());
     tr.append($('<td/>').html(file.getId()));
     tr.append($('<td/>').html(file.getName()));
     tr.append($('<td/>').html(file.getPath()));
     tr.append($('<td/>').html(file.getType()));
     tr.append($('<td/>').html(file.getSize()));
+    tr.append($('<td/>').html(a));
     return tr;
 };
 
@@ -197,7 +214,10 @@ $(document).ready(function() {
 });
 
 $(document).ajaxSuccess(function(event, xhr, settings) {
-    if (event.type == 'ajaxSuccess' && (settings.type == 'POST' || settings.type == 'PUT' || settings == 'DELETE')) {
+    console.log(event);
+    console.log(xhr);
+    console.log(settings);
+    if (event.type == 'ajaxSuccess' && (settings.type == 'POST' || settings.type == 'PUT' || settings.type == 'DELETE')) {
         switch (settings.url) {
             case "/files":
                 $('div#file-panel').filePanel();
