@@ -13,6 +13,8 @@ import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.util.List;
@@ -81,6 +83,31 @@ public class Files {
         }
     }
 
+    @GET
+    @Path("/{id}")
+    public Response retrieve(@PathParam("id") Long id) {
+        EntityManager entityManager = null;
+        try {
+            entityManager = entityManagerFactory.createEntityManager();
+            final File file = entityManager.find(File.class, id);
+            if (file == null) throw new WebApplicationException(Response.Status.NOT_FOUND);
+            logger.log(Level.INFO, "Retrieved {0}", file);
+            StreamingOutput stream = new StreamingOutput() {
+                @Override
+                public void write(OutputStream output) throws IOException, WebApplicationException {
+                    try {
+                        read(file, output);
+                    } catch (Exception e) {
+                        throw new WebApplicationException(e);
+                    }
+                }
+            };
+            return Response.ok(stream).build();
+        } finally {
+            if (entityManager != null && entityManager.isOpen()) entityManager.close();
+        }
+    }
+
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void delete(File file) {
@@ -123,7 +150,7 @@ public class Files {
             if (inputStreamReader != null) inputStreamReader.close();
             if (inputStream != null) inputStream.close();
             if (printWriter != null) printWriter.close();
-            if (writeChannel != null && writeChannel.isOpen()) writeChannel.close();
+            if (writeChannel != null && writeChannel.isOpen()) writeChannel.closeFinally();
         }
     }
 
