@@ -1,5 +1,4 @@
-REST Archetype
-==============
+# GAE REST Archetype
 
 Maven archetype for Java REST projects running on Google App Engine.
 

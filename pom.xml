@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>name.vysoky</groupId>
-    <artifactId>rest-archetype</artifactId>
+    <artifactId>gae-rest-archetype</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>REST Archetype</name>
-    <url>http://maven.apache.org</url>
+    <name>Google App Engine REST Archetype</name>
+    <url>http://github.com/vysokyj/gae-rest-archetype</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
